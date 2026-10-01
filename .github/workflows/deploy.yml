@@ -1,0 +1,41 @@
+name: CI/CD - Deploy Lambda functions
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'lambda/**'
+
+jobs:
+  test-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Python syntax
+        run: python -m py_compile lambda/*.py
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+
+      - name: Deploy extract-text-textract
+        run: |
+          cd lambda
+          zip f1.zip extract_text_textract.py
+          aws lambda update-function-code --function-name extract-text-textract --zip-file fileb://f1.zip
+
+      - name: Deploy extract-medical-entities
+        run: |
+          cd lambda
+          zip f2.zip extract_medical_entities.py
+          aws lambda update-function-code --function-name extract-medical-entities --zip-file fileb://f2.zip
+
+      - name: Deploy query-patient-records
+        run: |
+          cd lambda
+          zip f3.zip query_patient_records.py
+          aws lambda update-function-code --function-name query-patient-records --zip-file fileb://f3.zip
